@@ -21,6 +21,7 @@ class PDFViewer extends StatefulWidget {
   final double minScale;
   final double maxScale;
   final double panLimit;
+  final ValueChanged<int> onPageChanged;
 
   final Widget Function(
     BuildContext,
@@ -48,7 +49,8 @@ class PDFViewer extends StatefulWidget {
       this.zoomSteps,
       this.minScale,
       this.maxScale,
-      this.panLimit})
+      this.panLimit,
+      this.onPageChanged})
       : super(key: key);
 
   _PDFViewerState createState() => _PDFViewerState();
@@ -199,6 +201,7 @@ class _PDFViewerState extends State<PDFViewer> {
                 _pageNumber = page + 1;
               });
               _loadPage();
+              widget.onPageChanged(page);
             },
             scrollDirection: widget.scrollDirection ?? Axis.horizontal,
             controller: _pageController,
