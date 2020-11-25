@@ -122,7 +122,7 @@ public class FlutterPluginPdfViewerPlugin implements MethodCallHandler {
 
     private String getFileNameFromPath(String name) {
         String filePath = name.substring(name.lastIndexOf('/') + 1);
-        filePath = filePath.substring(0, filePath.lastIndexOf('.'));
+        // filePath = filePath.substring(0, filePath.lastIndexOf('.'));
         return String.format("%s-%s", filePrefix, filePath);
     }
 
