@@ -1,8 +1,8 @@
 #import "FlutterPluginPdfViewerPlugin.h"
+#import <CommonCrypto/CommonDigest.h>
 
 static NSString* const kDirectory = @"FlutterPluginPdfViewer";
 static NSString* const kFilePath = @"file:///";
-static NSString* kFileName = @"";
 
 @implementation FlutterPluginPdfViewerPlugin
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
@@ -58,11 +58,6 @@ static NSString* kFileName = @"";
         NSLog(@"Create directory error: %@", error);
         return nil;
     }
-    // Generate random file size for this document
-
-    kFileName = [[NSUUID UUID] UUIDString];
-    NSLog(@"[FlutterPluginPdfViewer] File has %zd pages", numberOfPages);
-    NSLog(@"[FlutterPluginPdfViewer] File will be saved in cache as %@", kFileName);
     return [NSString stringWithFormat:@"%zd", numberOfPages];
 }
 
@@ -84,6 +79,13 @@ static NSString* kFileName = @"";
     if (pageNumber > numberOfPages) {
         pageNumber = numberOfPages;
     }
+    NSString *fileName = [NSString stringWithFormat:@"%@_%ld", [self getmd5WithString:url], pageNumber];
+    NSString *imageFilePath = [filePathAndDirectory stringByAppendingPathComponent:fileName];
+    
+    if ([[NSFileManager defaultManager] fileExistsAtPath:imageFilePath]) {
+        CGPDFDocumentRelease(SourcePDFDocument);
+        return imageFilePath;
+    }
 
     if (![[NSFileManager defaultManager] createDirectoryAtPath:filePathAndDirectory
                                    withIntermediateDirectories:YES
@@ -91,17 +93,14 @@ static NSString* kFileName = @"";
                                                          error:&error])
     {
         NSLog(@"Create directory error: %@", error);
+        CGPDFDocumentRelease(SourcePDFDocument);
         return nil;
     }
     CGPDFPageRef SourcePDFPage = CGPDFDocumentGetPage(SourcePDFDocument, pageNumber);
-    CGPDFPageRetain(SourcePDFPage);
-    NSString *relativeOutputFilePath = [NSString stringWithFormat:@"%@/%@-%d.png", kDirectory, kFileName, (int)pageNumber];
-    NSString *imageFilePath = [temporaryDirectory stringByAppendingPathComponent:relativeOutputFilePath];
     CGRect sourceRect = CGPDFPageGetBoxRect(SourcePDFPage, kCGPDFMediaBox);
-    UIGraphicsBeginPDFContextToFile(imageFilePath, sourceRect, nil);
     // Calculate resolution
     // Set DPI to 300
-    CGFloat dpi = 300.0 / 72.0;
+    CGFloat dpi = 2;
     CGFloat width = sourceRect.size.width * dpi;
     CGFloat height = sourceRect.size.height * dpi;
     UIGraphicsBeginImageContext(CGSizeMake(width, height));
@@ -116,11 +115,25 @@ static NSString* kFileName = @"";
     CGContextScaleCTM(currentContext, dpi, -dpi);
     CGContextSaveGState(currentContext);
     CGContextDrawPDFPage (currentContext, SourcePDFPage);
+    
     CGContextRestoreGState(currentContext);
     UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
-    [UIImagePNGRepresentation(image) writeToFile: imageFilePath atomically:YES];
+    CGPDFDocumentRelease(SourcePDFDocument);
+    [UIImageJPEGRepresentation(image, 0.7) writeToFile: imageFilePath atomically:YES];
     return imageFilePath;
 }
+
+- (NSString*)getmd5WithString:(NSString *)string {
+    const char* original_str=[string UTF8String];
+    unsigned char digist[CC_MD5_DIGEST_LENGTH]; //CC_MD5_DIGEST_LENGTH = 16
+    CC_MD5(original_str, (uint)strlen(original_str), digist);
+    NSMutableString* outPutStr = [NSMutableString stringWithCapacity:10];
+    for(int i = 0; i < CC_MD5_DIGEST_LENGTH; i++){
+        [outPutStr appendFormat:@"%02x", digist[i]];//小写x表示输出的是小写MD5，大写X表示输出的是大写MD5
+    }
+    return [outPutStr lowercaseString];
+}
+
 
 @end

@@ -30,8 +30,8 @@ class PDFViewer extends StatefulWidget {
   final PDFDocument document;
   final Color indicatorText;
   final Color indicatorBackground;
-  final Color pickerButtonColor;
-  final Color pickerIconColor;
+  final Color? pickerButtonColor;
+  final Color? pickerIconColor;
   final IndicatorPosition indicatorPosition;
   final bool showIndicator;
   final bool showPicker;
@@ -40,12 +40,12 @@ class PDFViewer extends StatefulWidget {
   final bool enableSwipeNavigation;
   final Axis scrollDirection;
   final bool lazyLoad;
-  final PageController controller;
-  final int zoomSteps;
-  final double minScale;
-  final double maxScale;
-  final double panLimit;
-  final ValueChanged<int> onPageChanged;
+  final PageController? controller;
+  final int? zoomSteps;
+  final double? minScale;
+  final double? maxScale;
+  final double? panLimit;
+  final ValueChanged<int>? onPageChanged;
 
   final Widget Function(
     BuildContext,
@@ -53,13 +53,13 @@ class PDFViewer extends StatefulWidget {
     int totalPages,
     void Function({int page}) jumpToPage,
     void Function({int page}) animateToPage,
-  ) navigationBuilder;
-  final Widget progressIndicator;
+  )? navigationBuilder;
+  final Widget? progressIndicator;
 
   PDFViewer({
-    Key key,
-    @required this.document,
-    this.scrollDirection,
+    Key? key,
+    required this.document,
+    this.scrollDirection = Axis.horizontal,
     this.lazyLoad = true,
     this.indicatorText = Colors.white,
     this.indicatorBackground = Colors.black54,
@@ -86,17 +86,17 @@ class PDFViewer extends StatefulWidget {
 
 class _PDFViewerState extends State<PDFViewer> {
   bool _isLoading = true;
-  int _pageNumber;
+  late int _pageNumber;
   bool _swipeEnabled = true;
-  List<PDFPage> _pages;
-  PageController _pageController;
+  List _pages = <PDFPage>[];
+  late PageController _pageController;
   final Duration animationDuration = Duration(milliseconds: 200);
   final Curve animationCurve = Curves.easeIn;
 
   @override
   void initState() {
     super.initState();
-    _pages = List(widget.document.count);
+    _pages = [];
     _pageController = widget.controller ?? PageController();
     _pageNumber = _pageController.initialPage + 1;
     if (!widget.lazyLoad)
@@ -114,7 +114,7 @@ class _PDFViewerState extends State<PDFViewer> {
     super.didChangeDependencies();
     _pageNumber = _pageController.initialPage + 1;
     _isLoading = true;
-    _pages = List(widget.document.count);
+    _pages = [];
     // _loadAllPages();
     _loadPage();
   }
@@ -157,12 +157,12 @@ class _PDFViewerState extends State<PDFViewer> {
     }
   }
 
-  _animateToPage({int page}) {
+  _animateToPage({int? page}) {
     _pageController.animateToPage(page != null ? page : _pageNumber - 1,
         duration: animationDuration, curve: animationCurve);
   }
 
-  _jumpToPage({int page}) {
+  _jumpToPage({int? page}) {
     _pageController.jumpToPage(page != null ? page : _pageNumber - 1);
   }
 
@@ -200,18 +200,15 @@ class _PDFViewerState extends State<PDFViewer> {
     showDialog<int>(
         context: context,
         builder: (BuildContext context) {
-          return NumberPickerDialog.integer(
-            title: Text(widget.tooltip.pick),
+          return NumberPicker(
             minValue: 1,
-            cancelWidget: Container(),
             maxValue: widget.document.count,
-            initialIntegerValue: _pageNumber,
+            value: _pageNumber,
+            onChanged: (value) {
+              _pageNumber = value;
+              _jumpToPage();
+            },
           );
-        }).then((int value) {
-      if (value != null) {
-        _pageNumber = value;
-        _jumpToPage();
-      }
     });
   }
 
@@ -264,7 +261,7 @@ class _PDFViewerState extends State<PDFViewer> {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: (widget.showNavigation && widget.document.count > 1)
           ? widget.navigationBuilder != null
-              ? widget.navigationBuilder(
+              ? widget.navigationBuilder!(
                   context,
                   _pageNumber,
                   widget.document.count,

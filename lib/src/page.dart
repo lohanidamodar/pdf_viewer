@@ -16,11 +16,11 @@ import 'package:flutter/painting.dart';
 class PDFPage extends StatefulWidget {
   final String imgPath;
   final int num;
-  final Function(double) onZoomChanged;
-  final int zoomSteps;
-  final double minScale;
-  final double maxScale;
-  final double panLimit;
+  final Function(double)? onZoomChanged;
+  final int? zoomSteps;
+  final double? minScale;
+  final double? maxScale;
+  final double? panLimit;
   PDFPage(
     this.imgPath,
     this.num, {
@@ -36,7 +36,7 @@ class PDFPage extends StatefulWidget {
 }
 
 class _PDFPageState extends State<PDFPage> {
-  ImageProvider provider;
+  late ImageProvider provider;
 
   @override
   void didChangeDependencies() {
