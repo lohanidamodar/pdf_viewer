@@ -1,8 +1,5 @@
-import 'dart:html';
-
 import 'package:flutter/material.dart';
 import 'package:advance_pdf_viewer/advance_pdf_viewer.dart';
-import 'package:numberpicker/numberpicker.dart';
 
 /// enum to describe indicator position
 enum IndicatorPosition { topLeft, topRight, bottomLeft, bottomRight }
@@ -15,7 +12,6 @@ enum IndicatorPosition { topLeft, topRight, bottomLeft, bottomRight }
 /// [pickerIconColor] the picker button icon color
 /// [indicatorPosition] position of the indicator position defined by `IndicatorPosition` enum
 /// [showIndicator] show,hide indicator
-/// [showPicker] show hide picker
 /// [showNavigation] show hide navigation bar
 /// [toolTip] tooltip, instance of `PDFViewerTooltip`
 /// [enableSwipeNavigation] enable,disable swipe navigation
@@ -36,7 +32,6 @@ class PDFViewer extends StatefulWidget {
   final Color pickerIconColor;
   final IndicatorPosition indicatorPosition;
   final bool showIndicator;
-  final bool showPicker;
   final bool showNavigation;
   final PDFViewerTooltip tooltip;
   final bool enableSwipeNavigation;
@@ -66,7 +61,6 @@ class PDFViewer extends StatefulWidget {
     this.indicatorText = Colors.white,
     this.indicatorBackground = Colors.black54,
     this.showIndicator = true,
-    this.showPicker = true,
     this.showNavigation = true,
     this.enableSwipeNavigation = true,
     this.tooltip = const PDFViewerTooltip(),
@@ -169,20 +163,19 @@ class _PDFViewerState extends State<PDFViewer> {
   }
 
   Widget _drawIndicator() {
-    Widget child = GestureDetector(
-        onTap:
-            widget.showPicker && widget.document.count > 1 ? _pickPage : null,
-        child: Container(
-            padding:
-                EdgeInsets.only(top: 4.0, left: 16.0, bottom: 4.0, right: 16.0),
-            decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(4.0),
-                color: widget.indicatorBackground),
-            child: Text("$_pageNumber/${widget.document.count}",
-                style: TextStyle(
-                    color: widget.indicatorText,
-                    fontSize: 16.0,
-                    fontWeight: FontWeight.w400))));
+    Widget child = Container(
+      padding: EdgeInsets.only(top: 4.0, left: 16.0, bottom: 4.0, right: 16.0),
+      decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(4.0),
+          color: widget.indicatorBackground),
+      child: Text(
+        "$_pageNumber/${widget.document.count}",
+        style: TextStyle(
+            color: widget.indicatorText,
+            fontSize: 16.0,
+            fontWeight: FontWeight.w400),
+      ),
+    );
 
     switch (widget.indicatorPosition) {
       case IndicatorPosition.topLeft:
@@ -196,25 +189,6 @@ class _PDFViewerState extends State<PDFViewer> {
       default:
         return Positioned(top: 20, right: 20, child: child);
     }
-  }
-
-  _pickPage() {
-    showDialog<int>(
-        context: context,
-        builder: (BuildContext context) {
-          return NumberPickerDialog.integer(
-            title: Text(widget.tooltip.pick),
-            minValue: 1,
-            cancelWidget: Container(),
-            maxValue: widget.document.count,
-            initialIntegerValue: _pageNumber,
-          );
-        }).then((int value) {
-      if (value != null) {
-        _pageNumber = value;
-        _jumpToPage();
-      }
-    });
   }
 
   @override
@@ -249,21 +223,6 @@ class _PDFViewerState extends State<PDFViewer> {
               : Container(),
         ],
       ),
-      floatingActionButton: widget.showPicker && widget.document.count > 1
-          ? FloatingActionButton(
-              elevation: 4.0,
-              tooltip: widget.tooltip.jump,
-              child: Icon(
-                Icons.view_carousel,
-                color: widget.pickerIconColor ?? Colors.white,
-              ),
-              backgroundColor: widget.pickerButtonColor ?? Colors.blue,
-              onPressed: () {
-                _pickPage();
-              },
-            )
-          : null,
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: (widget.showNavigation && widget.document.count > 1)
           ? widget.navigationBuilder != null
               ? widget.navigationBuilder(
@@ -304,9 +263,7 @@ class _PDFViewerState extends State<PDFViewer> {
                                 },
                         ),
                       ),
-                      widget.showPicker
-                          ? Expanded(child: Text(''))
-                          : SizedBox(width: 1),
+                      SizedBox(width: 1),
                       Expanded(
                         child: IconButton(
                           icon: Icon(Icons.chevron_right),
