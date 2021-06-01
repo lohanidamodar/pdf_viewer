@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io';
+import 'dart:io' as io;
 
 import 'package:flutter/services.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -18,7 +18,7 @@ class PDFDocument {
   /// Load a PDF File from a given File
   /// [File file], file to be loaded
   ///
-  static Future<PDFDocument> fromFile(File file) async {
+  static Future<PDFDocument> fromFile(io.File file) async {
     PDFDocument document = PDFDocument();
     document._filePath = file.path;
     try {
@@ -40,7 +40,7 @@ class PDFDocument {
   static Future<PDFDocument> fromURL(String url,
       {Map<String, String>? headers, CacheManager? cacheManager}) async {
     // Download into cache
-    File f = await (cacheManager ?? DefaultCacheManager())
+    io.File f = await (cacheManager ?? DefaultCacheManager())
         .getSingleFile(url, headers: headers);
     PDFDocument document = PDFDocument();
     document._filePath = f.path;
@@ -58,10 +58,10 @@ class PDFDocument {
   /// [String asset] path of the asset to be loaded
   ///
   static Future<PDFDocument> fromAsset(String asset) async {
-    File file;
+    io.File file;
     try {
       var dir = await getApplicationDocumentsDirectory();
-      file = File("${dir.path}/file.pdf");
+      file = io.File("${dir.path}/file.pdf");
       var data = await rootBundle.load(asset);
       var bytes = data.buffer.asUint8List();
       await file.writeAsBytes(bytes, flush: true);
