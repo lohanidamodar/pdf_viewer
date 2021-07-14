@@ -31,6 +31,7 @@ class _MyAppState extends State<MyApp> {
     } else if (value == 2) {
       document = await PDFDocument.fromURL(
         "http://conorlastowka.com/book/CitationNeededBook-Sample.pdf",
+
         /* cacheManager: CacheManager(
           Config(
             "customCacheKey",
@@ -82,6 +83,7 @@ class _MyAppState extends State<MyApp> {
               ? Center(child: CircularProgressIndicator())
               : PDFViewer(
                   document: document,
+                  // lazyLoad: false,
                   zoomSteps: 1,
                   //uncomment below line to preload all pages
                   // lazyLoad: false,

@@ -1,7 +1,6 @@
+import 'package:advance_pdf_viewer/advance_pdf_viewer.dart';
 import 'package:advance_pdf_viewer/src/page_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:advance_pdf_viewer/advance_pdf_viewer.dart';
-import 'package:numberpicker/numberpicker.dart';
 
 /// enum to describe indicator position
 enum IndicatorPosition { topLeft, topRight, bottomLeft, bottomRight }
@@ -48,6 +47,7 @@ class PDFViewer extends StatefulWidget {
   final double? maxScale;
   final double? panLimit;
   final ValueChanged<int>? onPageChanged;
+  final Color? backgroundColor;
 
   final Widget Function(
     BuildContext,
@@ -56,7 +56,11 @@ class PDFViewer extends StatefulWidget {
     void Function({int page}) jumpToPage,
     void Function({int? page}) animateToPage,
   )? navigationBuilder;
+
   final Widget? progressIndicator;
+
+  final Widget Function(BuildContext, int? pageNumber, int? totalPages)?
+      indicatorBuilder;
 
   PDFViewer({
     Key? key,
@@ -82,6 +86,8 @@ class PDFViewer extends StatefulWidget {
     this.pickerButtonColor,
     this.pickerIconColor,
     this.onPageChanged,
+    this.backgroundColor,
+    this.indicatorBuilder,
   }) : super(key: key);
 
   _PDFViewerState createState() => _PDFViewerState();
@@ -102,14 +108,7 @@ class _PDFViewerState extends State<PDFViewer> {
     _pages = List.filled(widget.document.count, null);
     _pageController = widget.controller ?? PageController();
     _pageNumber = _pageController.initialPage + 1;
-    if (!widget.lazyLoad)
-      widget.document.preloadPages(
-        onZoomChanged: onZoomChanged,
-        zoomSteps: widget.zoomSteps,
-        minScale: widget.minScale,
-        maxScale: widget.maxScale,
-        panLimit: widget.panLimit,
-      );
+    if (!widget.lazyLoad) _preloadPages();
   }
 
   @override
@@ -117,7 +116,7 @@ class _PDFViewerState extends State<PDFViewer> {
     super.didChangeDependencies();
     _pageNumber = _pageController.initialPage + 1;
     _isLoading = true;
-    _pages = List.filled(widget.document.count,null);
+    _pages = List.filled(widget.document.count, null);
     // _loadAllPages();
     _loadPage();
   }
@@ -136,6 +135,23 @@ class _PDFViewerState extends State<PDFViewer> {
       setState(() {
         _swipeEnabled = true;
       });
+    }
+  }
+
+  _preloadPages() async {
+    int countvar = 1;
+    for (final _ in List.filled(widget.document.count, null)) {
+      final data = await widget.document.get(
+        page: countvar,
+        onZoomChanged: onZoomChanged,
+        zoomSteps: widget.zoomSteps,
+        minScale: widget.minScale,
+        maxScale: widget.maxScale,
+        panLimit: widget.panLimit,
+      );
+      _pages![countvar - 1] = data;
+
+      countvar++;
     }
   }
 
@@ -170,20 +186,28 @@ class _PDFViewerState extends State<PDFViewer> {
   }
 
   Widget _drawIndicator() {
+    if (widget.indicatorBuilder != null)
+      return widget.indicatorBuilder!(
+          context, _pageNumber, widget.document.count);
+
     Widget child = GestureDetector(
-        onTap:
-            widget.showPicker && widget.document.count > 1 ? _pickPage : null,
-        child: Container(
-            padding:
-                EdgeInsets.only(top: 4.0, left: 16.0, bottom: 4.0, right: 16.0),
-            decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(4.0),
-                color: widget.indicatorBackground),
-            child: Text("$_pageNumber/${widget.document.count}",
-                style: TextStyle(
-                    color: widget.indicatorText,
-                    fontSize: 16.0,
-                    fontWeight: FontWeight.w400))));
+      onTap: widget.showPicker && widget.document.count > 1 ? _pickPage : null,
+      child: Container(
+        padding:
+            EdgeInsets.only(top: 4.0, left: 16.0, bottom: 4.0, right: 16.0),
+        decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(4.0),
+            color: widget.indicatorBackground),
+        child: Text(
+          "$_pageNumber/${widget.document.count}",
+          style: TextStyle(
+            color: widget.indicatorText,
+            fontSize: 16.0,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+      ),
+    );
 
     switch (widget.indicatorPosition) {
       case IndicatorPosition.topLeft:
@@ -219,6 +243,7 @@ class _PDFViewerState extends State<PDFViewer> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: widget.backgroundColor,
       body: Stack(
         children: <Widget>[
           PageView.builder(
